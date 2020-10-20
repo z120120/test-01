@@ -58,9 +58,13 @@
         this.$refs.loginFormRef.validate(async valid => {
           if (!valid) return;
           const {data: res} = await this.$axios.post('login', this.loginForm)
+          //登录失败
           if (res.meta.status !== 200) return this.$message.error(res.meta.msg);
+          //登陆成功
           this.$message.success(res.meta.msg);
+          //设置token到sessionStorage
           window.sessionStorage.setItem('token',res.data.token)
+          //跳转到主页
           this.$router.push('/home')
         });
       },

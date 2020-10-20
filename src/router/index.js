@@ -26,6 +26,7 @@ const routes = [
 const router = new VueRouter({
   routes
 })
+//挂在路由导航守卫，token验证，如果不通过则跳转到登录页
 router.beforeEach((to,from,next)=>{
   if(to.path=='/login') return next()
   const tokenStr=window.sessionStorage.getItem('token')
