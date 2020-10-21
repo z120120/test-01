@@ -53,6 +53,7 @@
         }
       }
     },
+    
     methods: {
       login() {
         this.$refs.loginFormRef.validate(async valid => {
