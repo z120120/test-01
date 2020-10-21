@@ -19,7 +19,7 @@
       <el-table :data="userlist" border stripe>
         <el-table-column label="#" type="index">
         </el-table-column>
-        <el-table-column :label="item.label" :prop="item.prop" v-for="(item,index) in tableHead" :key="index">
+        <el-table-column :label="item.label" :prop="item.prop" v-for="(item,index) in tableHead" :key="index" :width="item.width?item.width:''">
           <template slot-scope="scope">
             <span v-html="item.render(scope.row)" v-if="item.render"></span>
             <template v-else-if="item.type=='switch'">
@@ -27,7 +27,7 @@
               </el-switch>
             </template>
             <template v-else-if="item.type=='button'">
-              <el-button :type="btn.type" size="mini" :icon="btn.icon" plain v-for="(btn,index) in item.btnArr" @click="btn.handle(scope.row.id)"
+              <el-button :type="btn.type" size="mini" :icon="btn.icon" plain v-for="(btn,index) in item.btnArr" @click="btn.handle(scope.row.id,scope.row)"
                 :key="index">{{btn.value}}</el-button>
             </template>
             <template v-else>{{scope.row[item.prop]}}</template>
@@ -89,6 +89,30 @@
         <el-button type="primary" @click="editUserInfo">确 定</el-button>
       </span>
     </el-dialog>
+
+    <!-- 分配角色对话框 -->
+    <el-dialog
+      title="分配角色"
+      :visible.sync="setRoleDialogVisible"
+      width="50%" @close="setRoleDialogClosed">
+      <div>
+        <p>当前的用户：{{userInfo.username}}</p>
+        <p>当前的角色：{{userInfo.role_name}}</p>
+        <p>分配新角色：<el-select v-model="selectedRoleId" placeholder="请选择新角色">
+    <el-option
+      v-for="item in roleList"
+      :key="item.id"
+      :label="item.roleName"
+      :value="item.id">
+    </el-option>
+  </el-select>
+  </p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveRoleInfo">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -113,7 +137,7 @@
         queryInfo: {
           query: '',
           pagenum: 1,
-          pagesize: 2
+          pagesize: 10
         },
         userlist: [],
         total: 0,
@@ -137,16 +161,22 @@
         }, {
           label: '操作',
           type: 'button',
+          width:'300px',
           btnArr: [{
             type: 'primary',
-            value: '',
+            value: '编辑',
             icon:'el-icon-edit',
             handle: this.editDialogShow
           }, {
             type: 'danger',
-            value: '',
+            value: '删除',
             icon:'el-icon-delete',
             handle: this.removeUserById
+          },{
+            type: 'warning',
+            value: '分配角色',
+            icon:'el-icon-setting',
+            handle: this.setRole
           }, ]
         }, ],
         addDialogVisible:false,
@@ -214,12 +244,16 @@
             trigger: "blur"
           }, ],
 
+
         },
         editDialogVisible:false,
         editForm:{
 
-        }
-
+        },
+        setRoleDialogVisible:false,
+        userInfo:{},
+        roleList:[],
+        selectedRoleId:'',
 
       }
     },
@@ -267,7 +301,7 @@
           if(!valid) return;
           const {data:res}=await this.$axios.post('users',this.addForm)
           if(res.meta.status!==201) return this.$message.error("添加用户失败")
-          
+
           this.$message.success("添加用户成功")
           this.getUserList()
           this.addDialogVisible=false
@@ -302,6 +336,30 @@
         this.$message.success("删除用户成功")
         this.queryInfo.pagenum=1;
         this.getUserList()
+      },
+      async setRole(id,userInfo){
+        this.userInfo=userInfo
+        // 获取角色列表
+        const {
+          data: res
+        } = await this.$axios.get('roles');
+        if (res.meta.status !== 200) return this.$message.error("获取角色列表失败！");
+        this.roleList = res.data;
+this.setRoleDialogVisible=true
+      },
+      async saveRoleInfo(){
+        if(!this.selectedRoleId) return this.$message.error("未选中要设置的角色！");
+        const {data:res}=await this.$axios.put('users/'+this.userInfo.id+'/role',{
+          rid:this.selectedRoleId
+        })
+        if (res.meta.status !== 200) return this.$message.error("设置角色失败！");
+        this.$message.success("设置角色成功！");
+        this.getUserList()
+        this.setRoleDialogVisible=false
+      },
+      setRoleDialogClosed(){
+        this.selectedRoleId='';
+        this.userInfo={};
       }
     }
   }
