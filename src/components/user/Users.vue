@@ -19,7 +19,7 @@
       <el-table :data="userlist" border stripe>
         <el-table-column label="#" type="index">
         </el-table-column>
-        <el-table-column :label="item.label" :prop="item.prop" v-for="(item,index) in tableHead" :key="index" :width="item.width?item.width:''">
+        <el-table-column :label="item.label" :prop="item.prop" v-for="(item,index) in tableHead" :key="index" :min-width="item.width?item.width:''">
           <template slot-scope="scope">
             <span v-html="item.render(scope.row)" v-if="item.render"></span>
             <template v-else-if="item.type=='switch'">
@@ -146,13 +146,16 @@
           prop: 'username'
         }, {
           label: '邮箱',
-          prop: 'email'
+          prop: 'email',
+          width:'150px'
         }, {
           label: '电话',
-          prop: 'mobile'
+          prop: 'mobile',
+           width:'150px'
         }, {
           label: '角色',
-          prop: 'role_name'
+          prop: 'role_name',
+           width:'150px'
         }, {
           label: '状态',
           prop: 'mg_state',
