@@ -6,7 +6,7 @@
       <el-breadcrumb-item>商品分类</el-breadcrumb-item>
     </el-breadcrumb>
     <el-card>
-      <el-row class="mb20">
+      <el-row class="mt20">
         <el-col>
           <el-button type="primary" @click="showAddCateDialog">添加分类</el-button>
         </el-col>
@@ -22,8 +22,8 @@
           <el-tag type="warning" size="mini"  v-else-if="scope.row.cat_level===2">三级</el-tag>
         </template>
         <template  slot="handle" slot-scope="scope">
-          <el-button type="primary" plain size="mini" icon="el-icon-edit" @click="edit(scope.row)">编辑</el-button>
-          <el-button type="warning" plain size="mini" icon="el-icon-delete"  @click="delete(scope.row)">删除</el-button>
+          <el-button type="primary" plain size="mini" icon="el-icon-edit" @click="editDialogShow(scope.row)">编辑</el-button>
+          <el-button type="warning" plain size="mini" icon="el-icon-delete"  @click="delCate(scope.row.cat_id)">删除</el-button>
             </template>
       </tree-table>
       <el-pagination
@@ -53,6 +53,19 @@
       <span slot="footer" class="dialog-footer">
         <el-button @click="addCateDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="addCate">确 定</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 修改分类对话框 -->
+    <el-dialog title="修改分类" :visible.sync="editDialogVisible" width="50%" @close="editDiglogClosed">
+      <el-form :model="editForm" :rules="editFormRules" ref="editFormRef" label-width="80px">
+        <el-form-item label="分类名称" prop="cat_name">
+          <el-input v-model="editForm.cat_name"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="editCate">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -115,6 +128,10 @@
         },
         // 选中的父级分类的id数组
         selectedKeys:[],
+        editDialogVisible:false,
+        editForm:{
+
+        }
 
 
       }
@@ -130,11 +147,41 @@
         this.catelist = res.data.result;
         this.total = res.data.total;
       },
-      edit(row){
-console.log(row)
+      editDialogShow(row){
+        this.editDialogVisible = true;
+        this.editForm = row
       },
-      delete(row){
-console.log(row)
+      editCate(){
+        this.$refs.editFormRef.validate(async valid => {
+          if (!valid) return;
+          const {
+            data: res
+          } = await this.$axios.put('categories/' + this.editForm.cat_id, {
+            cat_name: this.editForm.cat_name,
+          })
+          if (res.meta.status !== 200) return this.$message.error("修改分类失败")
+          this.$message.success("修改分类成功")
+          this.getCateList()
+          this.editDialogVisible = false
+        })
+      },
+      async delCate(catId){
+       
+ const confirmResult = await this.$confirm('此操作将永久删除该分类，是否继续？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).catch(err => err)
+        if (confirmResult !== 'confirm') {
+          return this.$message.info("已取消删除！")
+        }
+        const {
+          data: res
+        } = await this.$axios.delete('categories/' + catId);
+        if (res.meta.status !== 200) return this.$message.error("删除分类失败")
+        this.$message.success("删除分类成功")
+        this.queryInfo.pagenum=1;
+        this.getCateList()
       },
       handleSizeChange(newSize){
         this.queryInfo.pagesize=newSize
@@ -147,7 +194,6 @@ console.log(row)
       },
       showAddCateDialog(){
         this.getParentCateList()
-        console.log(this.parentcatelist)
         this.addCateDialogVisible=true
       },
       async getParentCateList(){
@@ -187,8 +233,6 @@ console.log(row)
          this.getCateList()
          this.addCateDialogVisible=false
        })
-
-        console.log(validResults)
       },
       addCateDialogClosed(){
         this.$refs.addCateFormRef.resetFields()
@@ -205,7 +249,7 @@ console.log(row)
     },
   }
 </script>
-<style lang="less">
+<style lang="less" scoped>
   .el-cascader{
     width:100%;
 
